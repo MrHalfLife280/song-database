@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Internal Song Index</title>
+<style>
+body {
+    font-family: Arial, Helvetica, sans-serif;
+    background: #e6e6e6;
+    color: #000;
+    margin: 10px;
+    font-size: 12px;
+}
+h1 {
+    font-size: 14px;
+    margin: 4px 0 8px 0;
+}
+fieldset {
+    border: 1px solid #999;
+    padding: 6px;
+    margin-bottom: 8px;
+    background: #f2f2f2;
+}
+label {
+    display: inline-block;
+    width: 120px;
+}
+input[type=text] {
+    width: 240px;
+    font-size: 12px;
+}
+button {
+    font-size: 12px;
+    padding: 2px 6px;
+}
+table {
+    width: 100%;
+    border-collapse: collapse;
+    background: #fff;
+}
+th {
+    background: #d0d0d0;
+    border: 1px solid #999;
+    font-weight: normal;
+    text-align: left;
+    padding: 4px;
+}
+td {
+    border: 1px solid #bbb;
+    padding: 4px;
+}
+tr:nth-child(even) {
+    background: #f7f7f7;
+}
+.toolbar {
+    margin-bottom: 6px;
+}
+</style>
+</head>
+<body>
+
+<h1>Song Database</h1>
+
+<fieldset>
+<legend>New entry</legend>
+<div>
+<label>Title</label>
+<input id="title">
+</div>
+<div>
+<label>Artists</label>
+<input id="artists">
+</div>
+<div>
+<label>Year</label>
+<input id="year">
+</div>
+<button onclick="addSong()">Insert record</button>
+</fieldset>
+
+<div class="toolbar">
+<button onclick="exportIndex()">Export index</button>
+<input type="file" id="importFile" onchange="importIndex()">
+</div>
+
+<table>
+<thead>
+<tr>
+<th>Title</th>
+<th>Artists</th>
+<th>Year</th>
+<th>Action</th>
+</tr>
+</thead>
+<tbody id="list"></tbody>
+</table>
+
+<script>
+let songs = JSON.parse(localStorage.getItem("songs") || "[]")
+
+function save() {
+    localStorage.setItem("songs", JSON.stringify(songs))
+}
+
+function render() {
+    const list = document.getElementById("list")
+    list.innerHTML = ""
+    songs.forEach((song, index) => {
+        const row = document.createElement("tr")
+        row.innerHTML =
+            "<td>" + song.title + "</td>" +
+            "<td>" + song.artists.join(", ") + "</td>" +
+            "<td>" + song.year + "</td>" +
+            "<td><button onclick='deleteSong(" + index + ")'>Delete</button></td>"
+        list.appendChild(row)
+    })
+}
+
+function addSong() {
+    const title = document.getElementById("title").value.trim()
+    const artists = document.getElementById("artists").value.split(",").map(a => a.trim())
+    const year = document.getElementById("year").value.trim()
+    if (!title || !artists[0] || !year) return
+    songs.push({ title, artists, year })
+    save()
+    render()
+}
+
+function deleteSong(index) {
+    songs.splice(index, 1)
+    save()
+    render()
+}
+
+function exportIndex() {
+    const data = JSON.stringify(songs)
+    const blob = new Blob([data], { type: "application/json" })
+    const link = document.createElement("a")
+    link.href = URL.createObjectURL(blob)
+    link.download = "song-index.json"
+    link.click()
+}
+
+function importIndex() {
+    const file = document.getElementById("importFile").files[0]
+    if (!file) return
+    const reader = new FileReader()
+    reader.onload = e => {
+        songs = JSON.parse(e.target.result)
+        save()
+        render()
+    }
+    reader.readAsText(file)
+}
+
+render()
+</script>
+
+</body>
+</html>
